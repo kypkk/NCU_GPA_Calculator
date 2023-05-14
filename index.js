@@ -1,9 +1,18 @@
+/* import dependencies
+   -------------------------------------------------------------------------------
+   puppeteer-extra -- acts like a browser
+   puppeteer-extra-plugin-recaptcha -- help solves reCAPTCHA when using puppeteer
+   cheerio -- helps with parsing HTML
+   dotenv -- helps with loading .env files
+--------------------------------------------------------------------------------*/
+
 import puppeteer from "puppeteer-extra";
 import RecaptchaPlugin from "puppeteer-extra-plugin-recaptcha";
 import * as cheerio from "cheerio";
 import * as dotenv from "dotenv";
-dotenv.config();
+dotenv.config(); // dotenv configuration
 
+// puppeteer Recaptcha Plugin Configuration
 puppeteer.use(
   RecaptchaPlugin({
     provider: {
@@ -13,14 +22,29 @@ puppeteer.use(
     visualFeedback: true, // colorize reCAPTCHAs (violet = detected, green = solved)
   })
 );
-(async () => {
-  const browser = await puppeteer.launch({ headless: "new" });
-  const page = await browser.newPage();
 
+// array to store scores and credits
+const score_array = [];
+const credit_array = [];
+
+// get all scores and credits using puppeteer as a headless browser and cheerio to parse the HTML
+const get_ScoresANDCredits = async () => {
+  const browser = await puppeteer.launch({ headless: "new" }); // launch headless browser
+  const page = await browser.newPage(); // open new page
+
+  let status = true; // check if the final score and credit array are the same length
+
+  // Get to the page of scores and credits
   await page.goto(
     "https://cis.ncu.edu.tw/iNCU/academic/register/transcriptQuery?groupName=wpsNone&systemId=124&loginName=00340176009601C500340079009600EB01A20176005800EB&sn=789204639&verifyName=MTA5MjAxNTIx"
   );
 
+  /* login state
+     1. solve the reCAPTCHAs
+     2. enter account and password
+     3. click login button
+     4. click Goto button
+  */
   await page.solveRecaptchas();
   await page.type("#inputAccount", process.env.NCU_ACCOUNT);
   await page.type("#inputPassword", process.env.NCU_PASSWORD);
@@ -34,15 +58,35 @@ puppeteer.use(
     await page.click("button.btn-primary"),
   ]);
 
+  /* This is the part when you finally get to the scores and credits page
+    1. use cheerio to parse the HTML body
+    2. get all the scores and credits by selectors and push them into the score_array and credit_array arrays
+  */
   let body = await page.content();
   let $ = await cheerio.load(body);
 
   $(
     "body > div.container-fluid.mainContent > div > div:nth-child(4) > table > tbody > tr > td:nth-child(7) > span"
   ).each((i, elem) => {
-    console.log($(elem).text());
+    score_array.push($(elem).text());
   });
-  await page.screenshot({ path: "Score.jpg" });
+
+  $(
+    "body > div.container-fluid.mainContent > div > div:nth-child(4) > table > tbody > tr > td:nth-child(6)"
+  ).each((i, elem) => {
+    credit_array.push($(elem).text());
+  });
 
   await browser.close();
-})();
+
+  // check if the score and credit arrays are the same length
+  if (score_array.length !== credit_array.length) {
+    status = false;
+  }
+
+  // return the score and credit arrays if status is true
+  return new Promise((resolve, reject) => {
+    if (status) resolve({ score_array, credit_array });
+    else reject({ msg: "you didn't get the score or the course credit" });
+  });
+};
