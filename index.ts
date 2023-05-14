@@ -6,10 +6,10 @@
    dotenv -- helps with loading .env files
 --------------------------------------------------------------------------------*/
 
-import puppeteer from "puppeteer-extra";
-import RecaptchaPlugin from "puppeteer-extra-plugin-recaptcha";
-import * as cheerio from "cheerio";
-import * as dotenv from "dotenv";
+const puppeteer = require("puppeteer-extra");
+const RecaptchaPlugin = require("puppeteer-extra-plugin-recaptcha");
+const cheerio = require("cheerio");
+const dotenv = require("dotenv");
 dotenv.config(); // dotenv configuration
 
 // puppeteer Recaptcha Plugin Configuration
@@ -17,15 +17,20 @@ puppeteer.use(
   RecaptchaPlugin({
     provider: {
       id: "2captcha",
-      token: process.env.TWO_CAPTACH_APIKEY, // REPLACE THIS WITH YOUR OWN 2CAPTCHA API KEY ⚡
+      token: process.env.TWO_CAPTCHA_APIKEY, // REPLACE THIS WITH YOUR OWN 2CAPTCHA API KEY ⚡
     },
     visualFeedback: true, // colorize reCAPTCHAs (violet = detected, green = solved)
   })
 );
 
+interface ResolveObj {
+  score_array: string[];
+  credit_array: string[];
+}
+
 // array to store scores and credits
-const score_array = [];
-const credit_array = [];
+const score_array: string[] = [];
+const credit_array: string[] = [];
 
 // get all scores and credits using puppeteer as a headless browser and cheerio to parse the HTML
 const get_ScoresANDCredits = async () => {
@@ -46,8 +51,10 @@ const get_ScoresANDCredits = async () => {
      4. click Goto button
   */
   await page.solveRecaptchas();
-  await page.type("#inputAccount", process.env.NCU_ACCOUNT);
-  await page.type("#inputPassword", process.env.NCU_PASSWORD);
+  if (process.env.NCU_ACCOUNT && process.env.NCU_PASSWORD) {
+    await page.type("#inputAccount", process.env.NCU_ACCOUNT);
+    await page.type("#inputPassword", process.env.NCU_PASSWORD);
+  }
   await Promise.all([
     page.waitForNavigation(),
     await page.click("button.btn-primary"),
@@ -85,8 +92,27 @@ const get_ScoresANDCredits = async () => {
   }
 
   // return the score and credit arrays if status is true
-  return new Promise((resolve, reject) => {
+  return new Promise<ResolveObj>((resolve, reject) => {
     if (status) resolve({ score_array, credit_array });
     else reject({ msg: "you didn't get the score or the course credit" });
   });
 };
+get_ScoresANDCredits()
+  .then((res) => {
+    for (let i = 0; i < res.score_array.length; i++) {
+      if (
+        !(
+          res.score_array[i].includes("未到") ||
+          res.score_array[i].includes("停修") ||
+          res.score_array[i].includes("勞動服務通過") ||
+          res.credit_array[i].includes("-")
+        )
+      )
+        console.log(
+          `Score: ${res.score_array[i]} Credit: ${res.credit_array[i]}`
+        );
+    }
+  })
+  .catch((err) => {
+    console.log(err.msg);
+  });

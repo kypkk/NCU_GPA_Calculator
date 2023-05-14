@@ -2,10 +2,9 @@
   "name": "node_crawl",
   "version": "1.0.0",
   "description": "",
-  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "ts-node index.ts"
   },
   "author": "",
   "license": "ISC",
@@ -13,9 +12,9 @@
     "async": "^3.2.4",
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.0.3",
-    "puppeteer": "^20.2.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-recaptcha": "^3.6.8",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "ts-node": "^10.9.1"
   }
 }

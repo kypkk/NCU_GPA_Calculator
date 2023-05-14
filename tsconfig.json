@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    // https://github.com/tsconfig/bases/blob/main/bases/node14.json
+    "lib": ["es2020", "DOM"],
+    "module": "ESNext", // for @rollup/plugin-typescript
+    "target": "es2020",
+    "moduleResolution": "node",
+    // override extra strict rules
+    "verbatimModuleSyntax": false,
+    "exactOptionalPropertyTypes": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "strictPropertyInitialization": false,
+    // enable required features
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    // output
+    "outDir": "./dist",
+    // "noResolve": true, // Important: Otherwise TS would rewrite our ambient d.ts file locations (see: yarn copy-dts) :(
+    "declaration": false,
+    "sourceMap": true,
+    "removeComments": false,
+    "resolveJsonModule": true
+  },
+  "include": ["**/*.ts", "*.config.js", ".*rc.js"],
+  "exclude": ["node_modules", "dist", "frontend"]
+}
