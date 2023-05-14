@@ -23,17 +23,24 @@ puppeteer.use(
   })
 );
 
+// interface of score and credit object
 interface ResolveObj {
   score_array: string[];
   credit_array: string[];
 }
 
-// array to store scores and credits
-const score_array: string[] = [];
-const credit_array: string[] = [];
+// interface of gpa_credit object
+interface GPA_credit_obj {
+  GPA_4: number;
+  GPA_4_3: number;
+  credit: number;
+}
 
 // get all scores and credits using puppeteer as a headless browser and cheerio to parse the HTML
-const get_ScoresANDCredits = async () => {
+const get_ScoresANDCredits = async (): Promise<ResolveObj> => {
+  const score_array: string[] = [];
+  const credit_array: string[] = [];
+
   const browser = await puppeteer.launch({ headless: "new" }); // launch headless browser
   const page = await browser.newPage(); // open new page
 
@@ -97,21 +104,64 @@ const get_ScoresANDCredits = async () => {
     else reject({ msg: "you didn't get the score or the course credit" });
   });
 };
+
+// Turn the score and credit array into GPA Credit objects array
+const cal_GPA_credit = async (res: ResolveObj): Promise<GPA_credit_obj[]> => {
+  const GPA_credit_array: GPA_credit_obj[] = [];
+
+  for (let i = 0; i < res.score_array.length; i++) {
+    if (
+      !(
+        res.score_array[i].includes("未到") ||
+        res.score_array[i].includes("停修") ||
+        res.score_array[i].includes("勞動服務通過") ||
+        res.credit_array[i].includes("-")
+      )
+    ) {
+      // turn the scores into gpa_4 and gpa_4.3
+      var score = parseFloat(res.score_array[i]);
+      var GPA_4: number;
+      var GPA_4_3: number;
+      var credit: number = parseInt(res.credit_array[i]);
+
+      if (score >= 80) GPA_4 = 4;
+      else if (score >= 70) GPA_4 = 3;
+      else if (score >= 60) GPA_4 = 2;
+      else if (score > 1) GPA_4 = 1;
+      else GPA_4 = 0;
+
+      if (score >= 90) GPA_4_3 = 4.3;
+      else if (score >= 85) GPA_4_3 = 4;
+      else if (score >= 80) GPA_4_3 = 3.7;
+      else if (score >= 77) GPA_4_3 = 3.3;
+      else if (score >= 73) GPA_4_3 = 3;
+      else if (score >= 70) GPA_4_3 = 2.7;
+      else if (score >= 67) GPA_4_3 = 2.3;
+      else if (score >= 63) GPA_4_3 = 2;
+      else if (score >= 60) GPA_4_3 = 1.7;
+      else if (score >= 50) GPA_4_3 = 1;
+      else GPA_4_3 = 0;
+
+      // push gpa_credit_obj into GPA_credit_array
+      var GPA_credit_obj = { GPA_4, GPA_4_3, credit };
+      if (credit) {
+        console.log(`score: ${score}, credit: ${credit}`);
+        GPA_credit_array.push(GPA_credit_obj);
+      }
+    }
+  }
+  return new Promise<GPA_credit_obj[]>((resolve, reject) => {
+    resolve(GPA_credit_array);
+  });
+};
+
 get_ScoresANDCredits()
   .then((res) => {
-    for (let i = 0; i < res.score_array.length; i++) {
-      if (
-        !(
-          res.score_array[i].includes("未到") ||
-          res.score_array[i].includes("停修") ||
-          res.score_array[i].includes("勞動服務通過") ||
-          res.credit_array[i].includes("-")
-        )
-      )
-        console.log(
-          `Score: ${res.score_array[i]} Credit: ${res.credit_array[i]}`
-        );
-    }
+    console.log("calculating scores into GPAs");
+    return cal_GPA_credit(res);
+  })
+  .then((res) => {
+    // calculate total gpa todo
   })
   .catch((err) => {
     console.log(err.msg);
