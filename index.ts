@@ -105,8 +105,10 @@ const get_ScoresANDCredits = async (): Promise<ResolveObj> => {
   });
 };
 
-// Turn the score and credit array into GPA Credit objects array
-const cal_GPA_credit = async (res: ResolveObj): Promise<GPA_credit_obj[]> => {
+// Convert the score and credit array into GPA Credit objects array
+const convert_GPA_credit = async (
+  res: ResolveObj
+): Promise<GPA_credit_obj[]> => {
   const GPA_credit_array: GPA_credit_obj[] = [];
 
   for (let i = 0; i < res.score_array.length; i++) {
@@ -118,7 +120,7 @@ const cal_GPA_credit = async (res: ResolveObj): Promise<GPA_credit_obj[]> => {
         res.credit_array[i].includes("-")
       )
     ) {
-      // turn the scores into gpa_4 and gpa_4.3
+      // Convert the scores into gpa_4 and gpa_4.3
       var score = parseFloat(res.score_array[i]);
       var GPA_4: number;
       var GPA_4_3: number;
@@ -145,7 +147,7 @@ const cal_GPA_credit = async (res: ResolveObj): Promise<GPA_credit_obj[]> => {
       // push gpa_credit_obj into GPA_credit_array
       var GPA_credit_obj = { GPA_4, GPA_4_3, credit };
       if (credit) {
-        console.log(`score: ${score}, credit: ${credit}`);
+        // console.log(`score: ${score}, credit: ${credit}`);
         GPA_credit_array.push(GPA_credit_obj);
       }
     }
@@ -155,13 +157,30 @@ const cal_GPA_credit = async (res: ResolveObj): Promise<GPA_credit_obj[]> => {
   });
 };
 
+const calculate_GPA = async (res: GPA_credit_obj[]) => {
+  var total_credit = 0;
+  var GPA_4 = 0;
+  var GPA_4_3 = 0;
+  for (let i = 0; i < res.length; i++) {
+    GPA_4 += res[i].GPA_4 * res[i].credit;
+    GPA_4_3 += res[i].GPA_4_3 * res[i].credit;
+    total_credit += res[i].credit;
+  }
+  GPA_4 = parseFloat((GPA_4 / total_credit).toFixed(2));
+  GPA_4_3 = parseFloat((GPA_4_3 / total_credit).toFixed(2));
+  console.log(`Your Overall GPA: ${GPA_4}/4, ${GPA_4_3}/4.3`);
+};
+
 get_ScoresANDCredits()
   .then((res) => {
-    console.log("calculating scores into GPAs");
-    return cal_GPA_credit(res);
+    console.log("Converting scores into GPAs...........");
+    console.log("--------------------------------------");
+    return convert_GPA_credit(res);
   })
   .then((res) => {
-    // calculate total gpa todo
+    console.log("Calculating GPA.......................");
+    console.log("--------------------------------------");
+    calculate_GPA(res);
   })
   .catch((err) => {
     console.log(err.msg);
