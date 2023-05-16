@@ -117,6 +117,7 @@ const convert_GPA_credit = async (
         res.score_array[i].includes("未到") ||
         res.score_array[i].includes("停修") ||
         res.score_array[i].includes("勞動服務通過") ||
+        res.score_array[i].includes("一般課程通過") ||
         res.credit_array[i].includes("-")
       )
     ) {
@@ -168,6 +169,7 @@ const calculate_GPA = async (res: GPA_credit_obj[]) => {
   }
   GPA_4 = parseFloat((GPA_4 / total_credit).toFixed(2));
   GPA_4_3 = parseFloat((GPA_4_3 / total_credit).toFixed(2));
+  console.log(total_credit);
   console.log(`Your Overall GPA: ${GPA_4}/4, ${GPA_4_3}/4.3`);
 };
 
